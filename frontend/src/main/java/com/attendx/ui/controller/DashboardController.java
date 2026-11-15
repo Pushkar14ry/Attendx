@@ -4,8 +4,8 @@ import com.attendx.ui.model.AttendanceSummary;
 import com.attendx.ui.service.AttendXService;
 import com.attendx.ui.util.AnimationUtil;
 import com.attendx.ui.util.ToastManager;
-import com.attendx.ui.view.Scene3DLogo;
 import com.attendx.ui.view.BarChart3D;
+import com.attendx.ui.view.Scene3DLogo;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
@@ -33,14 +33,14 @@ public class DashboardController {
 
         VBox root = new VBox(24);
         root.setPadding(new Insets(28));
-        root.setStyle("-fx-background-color: #0B1020;");
+        root.setStyle("-fx-background-color: #FAF8F5;");
         scroll.setContent(root);
 
         // Header
         Label title = new Label("Dashboard");
-        title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
-        Label subtitle = new Label("Real-time attendance overview");
-        subtitle.setStyle("-fx-font-size: 13px; -fx-text-fill: #8899bb;");
+        title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #1B2B24;");
+        Label subtitle = new Label("Real-time attendance overview & 3D telemetry");
+        subtitle.setStyle("-fx-font-size: 13px; -fx-text-fill: #5E7267;");
         VBox header = new VBox(4, title, subtitle);
 
         // 3D hero logo scene
@@ -48,12 +48,20 @@ public class DashboardController {
         HBox heroBox = new HBox(logo3D.build());
         heroBox.setAlignment(Pos.CENTER);
         heroBox.setPrefHeight(220);
+        heroBox.setStyle("-fx-background-color: #FFFFFF; -fx-background-radius: 16; " +
+                "-fx-border-color: #E3DED6; -fx-border-radius: 16; " +
+                "-fx-effect: dropshadow(gaussian, rgba(39,60,51,0.06), 14, 0, 0, 3);");
 
-        // Stat cards row (placeholders)
-        Label studentsCard    = statCard("Total Students", "0", "#6C5CE7");
-        Label presentCard     = statCard("Present Today", "0", "#2ECC71");
-        Label absentCard      = statCard("Absent Today", "0", "#FF4D6D");
-        Label avgCard         = statCard("Class Average", "0%", "#00D2FF");
+        // Stat cards row
+        Label studentsVal = new Label("0");
+        Label presentVal  = new Label("0");
+        Label absentVal   = new Label("0");
+        Label avgVal      = new Label("0%");
+
+        VBox studentsCard = buildStatCard("Total Students", studentsVal, "#273C33");
+        VBox presentCard  = buildStatCard("Present Today", presentVal, "#36825B");
+        VBox absentCard   = buildStatCard("Absent Today", absentVal, "#BA4E4E");
+        VBox avgCard      = buildStatCard("Class Average", avgVal, "#4D735E");
 
         HBox statsRow = new HBox(16, studentsCard, presentCard, absentCard, avgCard);
         statsRow.setAlignment(Pos.CENTER_LEFT);
@@ -63,23 +71,29 @@ public class DashboardController {
         HBox.setHgrow(avgCard, Priority.ALWAYS);
 
         // 3D bar chart
-        Label chartTitle = new Label("Attendance Trend (3D)");
-        chartTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
+        Label chartTitle = new Label("Attendance Trend (Interactive 3D)");
+        chartTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1B2B24;");
+        Label chartSub = new Label("Drag to rotate • Scroll to zoom");
+        chartSub.setStyle("-fx-font-size: 12px; -fx-text-fill: #5E7267;");
+        HBox chartHead = new HBox(10, chartTitle, chartSub);
+        chartHead.setAlignment(Pos.BASELINE_LEFT);
+
         BarChart3D barChart3D = new BarChart3D();
         Node chart3DNode = barChart3D.build();
 
-        VBox chartSection = glassCard();
-        chartSection.getChildren().addAll(chartTitle, chart3DNode);
+        VBox chartSection = card();
+        chartSection.getChildren().addAll(chartHead, chart3DNode);
 
         // Loading indicator
         ProgressIndicator loading = new ProgressIndicator();
-        loading.setStyle("-fx-accent: #6C5CE7;");
+        loading.setStyle("-fx-accent: #4D735E;");
 
         root.getChildren().addAll(header, heroBox, statsRow, loading, chartSection);
 
         // Load data async
         Task<AttendanceSummary> task = new Task<>() {
-            @Override protected AttendanceSummary call() throws Exception {
+            @Override
+            protected AttendanceSummary call() throws Exception {
                 return service.getSummary();
             }
         };
@@ -91,14 +105,14 @@ public class DashboardController {
                 double avg = summary.classAverage();
 
                 // Count up animations
-                AnimationUtil.countUp(findLabel(studentsCard), 0, totalStudents, "");
-                AnimationUtil.countUp(findLabel(avgCard), 0, avg, "%");
+                AnimationUtil.countUp(studentsVal, 0, totalStudents, "");
+                AnimationUtil.countUp(avgVal, 0, avg, "%");
 
                 // Today's present/absent from trend
                 if (!summary.trend().isEmpty()) {
                     var today = summary.trend().get(summary.trend().size() - 1);
-                    AnimationUtil.countUp(findLabel(presentCard), 0, today.present(), "");
-                    AnimationUtil.countUp(findLabel(absentCard), 0, today.absent(), "");
+                    AnimationUtil.countUp(presentVal, 0, today.present(), "");
+                    AnimationUtil.countUp(absentVal, 0, today.absent(), "");
                 }
 
                 // Update chart
@@ -111,9 +125,11 @@ public class DashboardController {
             });
         });
         task.setOnFailed(e -> {
+            Throwable ex = task.getException();
+            if (ex != null) ex.printStackTrace();
             Platform.runLater(() -> {
                 root.getChildren().remove(loading);
-                toast.showError("Failed to load dashboard data");
+                toast.showError("Failed to load dashboard data: " + (ex != null ? ex.getMessage() : "unknown"));
             });
         });
         new Thread(task).start();
@@ -121,40 +137,27 @@ public class DashboardController {
         return scroll;
     }
 
-    private Label statCard(String title, String value, String color) {
-        Label val = new Label(value);
-        val.setStyle(String.format("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: %s;", color));
+    private VBox buildStatCard(String title, Label valLabel, String color) {
+        valLabel.setStyle(String.format("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: %s;", color));
         Label lbl = new Label(title);
-        lbl.setStyle("-fx-font-size: 12px; -fx-text-fill: #8899bb;");
+        lbl.setStyle("-fx-font-size: 13px; -fx-text-fill: #5E7267; -fx-font-weight: bold;");
 
-        VBox card = new VBox(6, val, lbl);
+        VBox card = new VBox(6, valLabel, lbl);
         card.setAlignment(Pos.CENTER_LEFT);
         card.setPadding(new Insets(20));
-        card.setStyle(String.format(
-                "-fx-background-color: #121929; -fx-background-radius: 16; " +
-                "-fx-border-color: rgba(108,92,231,0.2); -fx-border-radius: 16; " +
-                "-fx-border-width: 1; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 12, 0, 0, 4);"));
-        // Store label as user-data for countUp access
-        card.setUserData(val);
-
-        Label wrapper = new Label();
-        wrapper.setGraphic(card);
-        wrapper.setMaxWidth(Double.MAX_VALUE);
-        wrapper.setUserData(val);
-        HBox.setHgrow(wrapper, Priority.ALWAYS);
-        HBox.setHgrow(card, Priority.ALWAYS);
+        card.setStyle("-fx-background-color: #FFFFFF; -fx-background-radius: 16; " +
+                "-fx-border-color: #E3DED6; -fx-border-radius: 16; " +
+                "-fx-border-width: 1; -fx-effect: dropshadow(gaussian, rgba(39,60,51,0.06), 14, 0, 0, 4);");
         card.setMaxWidth(Double.MAX_VALUE);
-
-        return val; // return the value label directly for animation
+        return card;
     }
 
-    private Label findLabel(Label statLabel) { return statLabel; }
-
-    private VBox glassCard() {
+    private VBox card() {
         VBox card = new VBox(16);
         card.setPadding(new Insets(20));
-        card.setStyle("-fx-background-color: rgba(18,25,41,0.8); -fx-background-radius: 16; " +
-                "-fx-border-color: rgba(108,92,231,0.15); -fx-border-radius: 16; -fx-border-width: 1;");
+        card.setStyle("-fx-background-color: #FFFFFF; -fx-background-radius: 16; " +
+                "-fx-border-color: #E3DED6; -fx-border-radius: 16; -fx-border-width: 1; " +
+                "-fx-effect: dropshadow(gaussian, rgba(39,60,51,0.06), 14, 0, 0, 4);");
         return card;
     }
 }

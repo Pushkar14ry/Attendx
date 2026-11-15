@@ -6,17 +6,13 @@ import javafx.scene.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.paint.*;
 import javafx.scene.shape.Box;
-import javafx.scene.shape.Cylinder;
-import javafx.scene.shape.Sphere;
 import javafx.scene.transform.Rotate;
-import javafx.scene.transform.Translate;
 import javafx.util.Duration;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Interactive 3D bar chart.
+ * Interactive 3D bar chart styled in Sage Green & Cream White.
  * - Bars grow from zero on load.
  * - Mouse drag orbits the chart.
  * - Scroll zooms.
@@ -34,20 +30,21 @@ public class BarChart3D {
     public Node build() {
         Group world = new Group();
 
-        // Floor plane
+        // Floor plane: Warm Linen
         Box floor = new Box(400, 2, 300);
         PhongMaterial floorMat = new PhongMaterial();
-        floorMat.setDiffuseColor(Color.web("#1a2340"));
-        floorMat.setSpecularColor(Color.web("#6C5CE7", 0.3));
-        floorMat.setSpecularPower(30);
+        floorMat.setDiffuseColor(Color.web("#ECE7DE"));
+        floorMat.setSpecularColor(Color.web("#4D735E", 0.25));
+        floorMat.setSpecularPower(40);
         floor.setMaterial(floorMat);
         floor.setTranslateY(60);
 
-        // Grid lines
+        // Grid lines: Soft Sage
         for (int i = -150; i <= 150; i += 30) {
-            Box line = new Box(400, 0.5, 0.5);
-            line.setTranslateY(59); line.setTranslateZ(i);
-            PhongMaterial lineMat = new PhongMaterial(Color.web("#6C5CE7", 0.15));
+            Box line = new Box(400, 0.6, 0.6);
+            line.setTranslateY(59);
+            line.setTranslateZ(i);
+            PhongMaterial lineMat = new PhongMaterial(Color.web("#759784", 0.3));
             line.setMaterial(lineMat);
             world.getChildren().add(line);
         }
@@ -55,11 +52,11 @@ public class BarChart3D {
         barsGroup.getTransforms().addAll(rotateX, rotateY);
         world.getChildren().addAll(floor, barsGroup);
 
-        // Lighting
-        AmbientLight ambient = new AmbientLight(Color.web("#222244"));
-        PointLight light1 = new PointLight(Color.web("#6C5CE7"));
+        // Lighting: Warm natural light
+        AmbientLight ambient = new AmbientLight(Color.web("#FAF8F5"));
+        PointLight light1 = new PointLight(Color.web("#759784"));
         light1.setTranslateX(-200); light1.setTranslateY(-200); light1.setTranslateZ(-200);
-        PointLight light2 = new PointLight(Color.web("#00D2FF", 0.5));
+        PointLight light2 = new PointLight(Color.web("#FFFFFF", 0.75));
         light2.setTranslateX(150); light2.setTranslateY(-100); light2.setTranslateZ(100);
         world.getChildren().addAll(ambient, light1, light2);
 
@@ -96,47 +93,42 @@ public class BarChart3D {
         barsGroup.getChildren().clear();
         if (trend == null || trend.isEmpty()) return;
 
-        int count = Math.min(trend.size(), 12); // show last 12
+        int count = Math.min(trend.size(), 12);
         List<AttendanceSummary.DateTrend> visible = trend.subList(
                 Math.max(0, trend.size() - count), trend.size());
 
         int maxTotal = visible.stream().mapToInt(AttendanceSummary.DateTrend::total).max().orElse(1);
-        double maxBarHeight = 100.0;
+        double maxBarHeight = 110.0;
         double barWidth = 24;
-        double spacing = 36;
+        double spacing = 38;
         double startX = -(visible.size() - 1) * spacing / 2.0;
 
-        PhongMaterial presentMat = glossMaterial("#2ECC71");
-        PhongMaterial absentMat  = glossMaterial("#FF4D6D");
-
-        List<Box> barsList = new ArrayList<>();
+        PhongMaterial presentMat = glossMaterial("#36825B");
+        PhongMaterial absentMat  = glossMaterial("#BA4E4E");
 
         for (int i = 0; i < visible.size(); i++) {
             AttendanceSummary.DateTrend d = visible.get(i);
             double x = startX + i * spacing;
-            double targetPresent = maxTotal > 0 ? (double) d.present() / maxTotal * maxBarHeight : 0;
-            double targetAbsent  = maxTotal > 0 ? (double) d.absent()  / maxTotal * maxBarHeight * 0.6 : 0;
+            double targetPresent = maxTotal > 0 ? (double) d.present() / maxTotal * maxBarHeight : 2;
+            double targetAbsent  = maxTotal > 0 ? (double) d.absent()  / maxTotal * maxBarHeight * 0.8 : 2;
 
-            // Present bar
+            // Present bar (Leaf Green)
             Box pBar = new Box(barWidth, 1, barWidth * 0.8);
             pBar.setMaterial(presentMat);
-            pBar.setTranslateX(x - barWidth * 0.3);
-            pBar.setTranslateY(60); // start at floor
+            pBar.setTranslateX(x - barWidth * 0.35);
+            pBar.setTranslateY(60);
             barsGroup.getChildren().add(pBar);
 
-            // Absent bar
+            // Absent bar (Terracotta)
             Box aBar = new Box(barWidth * 0.8, 1, barWidth * 0.8);
             aBar.setMaterial(absentMat);
-            aBar.setTranslateX(x + barWidth * 0.4);
+            aBar.setTranslateX(x + barWidth * 0.45);
             aBar.setTranslateY(60);
             barsGroup.getChildren().add(aBar);
 
-            barsList.add(pBar);
-            barsList.add(aBar);
-
             // Animate bars growing
-            final double fTargetP = targetPresent;
-            final double fTargetA = targetAbsent;
+            final double fTargetP = Math.max(4, targetPresent);
+            final double fTargetA = Math.max(4, targetAbsent);
             Timeline grow = new Timeline(
                 new KeyFrame(Duration.ZERO,
                     new KeyValue(pBar.heightProperty(), 1),
@@ -144,21 +136,74 @@ public class BarChart3D {
                     new KeyValue(pBar.translateYProperty(), 60),
                     new KeyValue(aBar.translateYProperty(), 60)),
                 new KeyFrame(Duration.millis(600 + i * 80),
-                    new KeyValue(pBar.heightProperty(), Math.max(2, fTargetP), Interpolator.EASE_OUT),
-                    new KeyValue(aBar.heightProperty(), Math.max(2, fTargetA), Interpolator.EASE_OUT),
+                    new KeyValue(pBar.heightProperty(), fTargetP, Interpolator.EASE_OUT),
+                    new KeyValue(aBar.heightProperty(), fTargetA, Interpolator.EASE_OUT),
                     new KeyValue(pBar.translateYProperty(), 60 - fTargetP / 2, Interpolator.EASE_OUT),
                     new KeyValue(aBar.translateYProperty(), 60 - fTargetA / 2, Interpolator.EASE_OUT)));
             grow.play();
 
             // Hover highlight
-            int idx = i;
             pBar.setOnMouseEntered(e -> {
-                pBar.setMaterial(glossMaterial("#00FF9D"));
-                pBar.setTranslateY(pBar.getTranslateY() - 5);
+                pBar.setMaterial(glossMaterial("#48A876"));
+                pBar.setTranslateY(pBar.getTranslateY() - 4);
             });
             pBar.setOnMouseExited(e -> {
                 pBar.setMaterial(presentMat);
-                pBar.setTranslateY(pBar.getTranslateY() + 5);
+                pBar.setTranslateY(pBar.getTranslateY() + 4);
+            });
+            aBar.setOnMouseEntered(e -> {
+                aBar.setMaterial(glossMaterial("#D66B6B"));
+                aBar.setTranslateY(aBar.getTranslateY() - 4);
+            });
+            aBar.setOnMouseExited(e -> {
+                aBar.setMaterial(absentMat);
+                aBar.setTranslateY(aBar.getTranslateY() + 4);
+            });
+        }
+    }
+
+    /** Update chart with 3 categorical bars for daily report (Present, Absent, Not Marked) */
+    public void updateDailyData(int present, int absent, int notMarked) {
+        barsGroup.getChildren().clear();
+        int total = Math.max(1, present + absent + notMarked);
+        double maxBarHeight = 110.0;
+        double barWidth = 36;
+        double spacing = 60;
+
+        int[] counts = {present, absent, notMarked};
+        String[] colors = {"#36825B", "#BA4E4E", "#D49B45"};
+        String[] hoverColors = {"#48A876", "#D66B6B", "#E5B263"};
+
+        for (int i = 0; i < 3; i++) {
+            double x = (i - 1) * spacing;
+            double targetH = Math.max(6, (double) counts[i] / total * maxBarHeight);
+
+            PhongMaterial mat = glossMaterial(colors[i]);
+            PhongMaterial hovMat = glossMaterial(hoverColors[i]);
+
+            Box bar = new Box(barWidth, 1, barWidth);
+            bar.setMaterial(mat);
+            bar.setTranslateX(x);
+            bar.setTranslateY(60);
+            barsGroup.getChildren().add(bar);
+
+            final double fTarget = targetH;
+            Timeline grow = new Timeline(
+                new KeyFrame(Duration.ZERO,
+                    new KeyValue(bar.heightProperty(), 1),
+                    new KeyValue(bar.translateYProperty(), 60)),
+                new KeyFrame(Duration.millis(500 + i * 100),
+                    new KeyValue(bar.heightProperty(), fTarget, Interpolator.EASE_OUT),
+                    new KeyValue(bar.translateYProperty(), 60 - fTarget / 2, Interpolator.EASE_OUT)));
+            grow.play();
+
+            bar.setOnMouseEntered(e -> {
+                bar.setMaterial(hovMat);
+                bar.setTranslateY(bar.getTranslateY() - 4);
+            });
+            bar.setOnMouseExited(e -> {
+                bar.setMaterial(mat);
+                bar.setTranslateY(bar.getTranslateY() + 4);
             });
         }
     }

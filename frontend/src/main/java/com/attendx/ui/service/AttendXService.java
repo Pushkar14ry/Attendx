@@ -65,10 +65,17 @@ public class AttendXService {
     // ── Health ───────────────────────────────────────────────────
     public boolean isBackendOnline() {
         try {
-            HttpResponse<String> resp = client.get("/../actuator/health");
+            HttpResponse<String> resp = client.get("/students");
             return resp.statusCode() == 200;
         } catch (Exception e) {
-            return false;
+            try {
+                // Secondary fallback: check root actuator/health
+                java.net.URI rootHealth = java.net.URI.create(client.getBaseUrl()).resolve("/actuator/health");
+                HttpResponse<String> resp = client.get(rootHealth.toString());
+                return resp.statusCode() == 200;
+            } catch (Exception ex) {
+                return false;
+            }
         }
     }
 

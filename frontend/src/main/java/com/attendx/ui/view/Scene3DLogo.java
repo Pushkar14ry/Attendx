@@ -1,14 +1,10 @@
 package com.attendx.ui.view;
 
 import javafx.animation.*;
-import javafx.geometry.Point3D;
 import javafx.scene.*;
-import javafx.scene.effect.Bloom;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.*;
 import javafx.scene.shape.*;
 import javafx.scene.transform.Rotate;
-import javafx.scene.transform.Translate;
 import javafx.util.Duration;
 
 import java.util.ArrayList;
@@ -17,7 +13,7 @@ import java.util.Random;
 
 /**
  * 3D hero logo for the Dashboard: rotating "A" shape built from boxes
- * + a particle star-field of drifting spheres.
+ * in Sage Green & Cream White + a particle star-field of drifting spheres.
  */
 public class Scene3DLogo {
 
@@ -28,12 +24,12 @@ public class Scene3DLogo {
 
         // ── Build letter "A" from boxes ─────────────────────────
         PhongMaterial logoMat = new PhongMaterial();
-        logoMat.setDiffuseColor(Color.web("#6C5CE7"));
-        logoMat.setSpecularColor(Color.WHITE);
-        logoMat.setSpecularPower(60);
+        logoMat.setDiffuseColor(Color.web("#4D735E"));
+        logoMat.setSpecularColor(Color.web("#E8F0EC"));
+        logoMat.setSpecularPower(70);
 
         PhongMaterial accentMat = new PhongMaterial();
-        accentMat.setDiffuseColor(Color.web("#00D2FF"));
+        accentMat.setDiffuseColor(Color.web("#759784"));
         accentMat.setSpecularColor(Color.WHITE);
         accentMat.setSpecularPower(80);
 
@@ -63,7 +59,7 @@ public class Scene3DLogo {
         List<Sphere> particles = new ArrayList<>();
         List<Timeline> particleTimelines = new ArrayList<>();
 
-        PhongMaterial starMat = new PhongMaterial(Color.web("#00D2FF", 0.7));
+        PhongMaterial starMat = new PhongMaterial(Color.web("#8CA999", 0.7));
 
         for (int i = 0; i < PARTICLE_COUNT; i++) {
             double r = rng.nextDouble() * 0.8 + 0.3;
@@ -95,10 +91,10 @@ public class Scene3DLogo {
         world.getChildren().add(logoGroup);
 
         // ── Lighting ─────────────────────────────────────────────
-        AmbientLight ambient = new AmbientLight(Color.web("#0a0a20"));
-        PointLight point1 = new PointLight(Color.web("#6C5CE7"));
+        AmbientLight ambient = new AmbientLight(Color.web("#F4F0E8"));
+        PointLight point1 = new PointLight(Color.web("#759784"));
         point1.setTranslateX(-100); point1.setTranslateY(-80); point1.setTranslateZ(-100);
-        PointLight point2 = new PointLight(Color.web("#00D2FF", 0.6));
+        PointLight point2 = new PointLight(Color.web("#FFFFFF", 0.8));
         point2.setTranslateX(100); point2.setTranslateY(60); point2.setTranslateZ(80);
         world.getChildren().addAll(ambient, point1, point2);
 

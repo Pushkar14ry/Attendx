@@ -9,8 +9,8 @@ import javafx.scene.transform.Rotate;
 import javafx.util.Duration;
 
 /**
- * 3D Gauge/Donut built from Cylinders sweeping to a percentage.
- * The ring segments light up from 0 → percentage with easing.
+ * 3D Gauge/Donut built from Cylinders sweeping to a percentage,
+ * styled in Sage Green & Cream White.
  */
 public class Gauge3D {
 
@@ -23,30 +23,30 @@ public class Gauge3D {
         double radius = 70;
         double segRadius = 7;
 
-        PhongMaterial baseMat = new PhongMaterial(Color.web("#1a2340"));
+        PhongMaterial baseMat = new PhongMaterial(Color.web("#D8E4DC"));
         for (int i = 0; i < SEGMENTS; i++) {
             Cylinder seg = new Cylinder(segRadius, 8);
             seg.setMaterial(baseMat);
             double angle = Math.toRadians(i * 360.0 / SEGMENTS);
             seg.setTranslateX(radius * Math.sin(angle));
             seg.setTranslateZ(radius * Math.cos(angle));
-            // Tilt to form the ring
             Rotate tilt = new Rotate(90, Rotate.X_AXIS);
             seg.getTransforms().add(tilt);
             segments[i] = seg;
             world.getChildren().add(seg);
         }
 
-        // Center sphere
+        // Center sphere in botanical deep sage
         Sphere center = new Sphere(14);
-        PhongMaterial centerMat = new PhongMaterial(Color.web("#0D1428"));
-        centerMat.setSpecularColor(Color.web("#6C5CE7", 0.5));
+        PhongMaterial centerMat = new PhongMaterial(Color.web("#273C33"));
+        centerMat.setSpecularColor(Color.web("#8CA999", 0.6));
+        centerMat.setSpecularPower(50);
         center.setMaterial(centerMat);
         world.getChildren().add(center);
 
-        // Lighting
-        AmbientLight ambient = new AmbientLight(Color.web("#222244"));
-        PointLight light = new PointLight(Color.web("#6C5CE7"));
+        // Warm ambient & directional lighting
+        AmbientLight ambient = new AmbientLight(Color.web("#FAF8F5"));
+        PointLight light = new PointLight(Color.web("#759784"));
         light.setTranslateX(-100); light.setTranslateY(-80); light.setTranslateZ(-100);
         world.getChildren().addAll(ambient, light);
 
@@ -90,12 +90,10 @@ public class Gauge3D {
         litMat.setSpecularColor(Color.WHITE);
         litMat.setSpecularPower(60);
 
-        PhongMaterial baseMat = new PhongMaterial(Color.web("#1a2340"));
+        PhongMaterial baseMat = new PhongMaterial(Color.web("#D8E4DC"));
 
-        // Reset all to base first
         for (Cylinder seg : segments) seg.setMaterial(baseMat);
 
-        // Animate segments lighting up one by one
         Timeline tl = new Timeline();
         for (int i = 0; i < lit; i++) {
             final int idx = i;

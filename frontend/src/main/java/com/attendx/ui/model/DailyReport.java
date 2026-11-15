@@ -10,5 +10,9 @@ public record DailyReport(
     int absent,
     int notMarked
 ) {
-    public record StudentStatus(int rollNo, String name, String status) {}
+    public record StudentStatus(int rollNo, String name, String status) {
+        public int getRollNo() { return rollNo; }
+        public String getName() { return name; }
+        public String getStatus() { return status; }
+    }
 }

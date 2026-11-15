@@ -25,22 +25,43 @@ public class ApiClient {
     }
 
     public ApiClient() {
-        this.baseUrl = System.getProperty("attendx.api", DEFAULT_BASE);
+        String prop = System.getProperty("attendx.api");
+        if (prop == null || prop.isBlank() || prop.contains("${")) {
+            this.baseUrl = DEFAULT_BASE;
+        } else {
+            prop = prop.trim();
+            this.baseUrl = prop.endsWith("/") ? prop.substring(0, prop.length() - 1) : prop;
+        }
+        System.out.println("[AttendX] Initialized ApiClient with baseUrl: " + this.baseUrl);
         this.http = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();
     }
 
     public ApiClient(String baseUrl) {
-        this.baseUrl = baseUrl;
+        if (baseUrl == null || baseUrl.isBlank() || baseUrl.contains("${")) {
+            this.baseUrl = DEFAULT_BASE;
+        } else {
+            baseUrl = baseUrl.trim();
+            this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+        }
+        System.out.println("[AttendX] Initialized ApiClient with custom baseUrl: " + this.baseUrl);
         this.http = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();
     }
 
+    private URI resolveUri(String path) {
+        if (path.startsWith("http://") || path.startsWith("https://")) {
+            return URI.create(path);
+        }
+        String cleanPath = path.startsWith("/") ? path : "/" + path;
+        return URI.create(baseUrl + cleanPath);
+    }
+
     public HttpResponse<String> get(String path) throws IOException, InterruptedException {
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + path))
+                .uri(resolveUri(path))
                 .timeout(Duration.ofSeconds(10))
                 .header("Accept", "application/json")
                 .GET()
@@ -51,7 +72,7 @@ public class ApiClient {
     public HttpResponse<String> post(String path, Object body) throws IOException, InterruptedException {
         String json = MAPPER.writeValueAsString(body);
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + path))
+                .uri(resolveUri(path))
                 .timeout(Duration.ofSeconds(10))
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
@@ -62,7 +83,7 @@ public class ApiClient {
 
     public HttpResponse<String> delete(String path) throws IOException, InterruptedException {
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + path))
+                .uri(resolveUri(path))
                 .timeout(Duration.ofSeconds(10))
                 .DELETE()
                 .build();
