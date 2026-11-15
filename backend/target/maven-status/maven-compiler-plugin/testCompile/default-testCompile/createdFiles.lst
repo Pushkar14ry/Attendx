@@ -1,0 +1,3 @@
+com\attendx\service\AttendanceServiceTest.class
+com\attendx\controller\StudentControllerTest.class
+com\attendx\repository\StudentRepositoryTest.class
